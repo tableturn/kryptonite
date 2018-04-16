@@ -1,0 +1,16 @@
+/_build
+/_data
+/cover
+/db
+/deps
+/doc
+
+/.deliver/releases/
+/rel/*/**
+config/*.secret.exs
+
+*.beam
+*.dump
+*.ez
+*.fetch
+*.log
