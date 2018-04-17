@@ -64,10 +64,9 @@ defmodule Bip39 do
   """
   @spec from_data(binary) :: t | {:error, atom}
   def from_data(data) do
-    with true <- ensure_valid_data_size(byte_size(data)),
-         checksum = compute_checksum(data),
-         words = to_words(data, checksum) do
-      %@me{data: data, checksum: checksum, words: words}
+    with true <- ensure_valid_data_size(byte_size(data)) do
+      checksum = compute_checksum(data)
+      %@me{data: data, checksum: checksum, words: to_words(data, checksum)}
     end
   end
 
@@ -141,18 +140,12 @@ defmodule Bip39 do
 
   @spec ensure_valid_data_size(pos_integer) :: boolean | {:error, :invalid_data_size}
   defp ensure_valid_data_size(size) do
-    case size >= 4 && size <= 1024 && rem(size, 4) == 0 do
-      true -> true
-      false -> {:error, :invalid_data_size}
-    end
+    (size >= 4 && size <= 1024 && rem(size, 4) == 0) || {:error, :invalid_data_size}
   end
 
   @spec ensure_matching_checksum(binary, bitstring) :: true | {:error, :invalid_checksum}
   def ensure_matching_checksum(data, checksum) do
-    case checksum == compute_checksum(data) do
-      true -> true
-      false -> {:error, :invalid_checksum}
-    end
+    checksum == compute_checksum(data) || {:error, :invalid_checksum}
   end
 
   @spec compute_checksum(binary) :: bitstring
