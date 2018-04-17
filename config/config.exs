@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :bip39, wordlist: ~w(
+config :bip39, wordlist: ~w[
   abandon
   ability
   able
@@ -579,17 +579,17 @@ config :bip39, wordlist: ~w(
   elevator
   elite
   else
-    embark
-    embody
-    embrace
-    emerge
-    emotion
-    employ
-    empower
-    empty
-    enable
-    enact
-end
+  embark
+  embody
+  embrace
+  emerge
+  emotion
+  employ
+  empower
+  empty
+  enable
+  enact
+  end
   endless
   endorse
   enemy
@@ -2049,4 +2049,4 @@ end
   zero
   zone
   zoo
-)
+]
