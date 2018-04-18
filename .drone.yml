@@ -1,0 +1,37 @@
+matrix:
+  ELIXIR_VERSION:
+    - 1.4
+    - 1.5
+    - 1.6
+
+pipeline:
+  restore-cache:
+    image: drillster/drone-volume-cache
+    restore: true
+    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
+    volumes:
+      - /tmp/cache:/cache
+
+  build:
+    image: elixir:${ELIXIR_VERSION}
+    secrets: [codecov_token]
+    commands:
+      - MIX_ENV=test mix do
+        local.rebar --force, local.hex --force,
+        deps.get, compile,
+        coveralls.json
+
+  codecov:
+    image: robertstettner/drone-codecov
+    secrets: [codecov_token]
+    when:
+      status: [success]
+    files:
+      - cover/excoveralls.json
+
+  rebuild-cache:
+    image: drillster/drone-volume-cache
+    rebuild: true
+    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
+    volumes:
+      - /tmp/cache:/cache
