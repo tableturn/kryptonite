@@ -1,4 +1,4 @@
-defmodule Bip39 do
+defmodule Kryptonite.Bip39 do
   @moduledoc """
   This module allows for easy transformation between a binary and a mnemonic phrase.
 
@@ -6,7 +6,8 @@ defmodule Bip39 do
   is a multiple of 4 and comprised between 4 and 1024.
   """
   @me __MODULE__
-  @words Application.fetch_env!(:bip39, :wordlist)
+
+  @words Kryptonite.Wordlist.all()
 
   @type t :: %__MODULE__{words: String.t(), data: binary, checksum: bitstring}
   defstruct words: nil, data: nil, checksum: nil
@@ -19,7 +20,7 @@ defmodule Bip39 do
 
   ## Examples
 
-      iex> %Bip39{data: data, words: words} = generate(4)
+      iex> %Kryptonite.Bip39{data: data, words: words} = generate(4)
       iex> byte_size(data) == 4 && bit_size(data) == 32
       true
       iex> String.length(words) != 0
@@ -48,7 +49,7 @@ defmodule Bip39 do
   ### Examples
 
       iex> seed = "Hey."
-      iex> %Bip39{data: data} = from_data(seed)
+      iex> %Kryptonite.Bip39{data: data} = from_data(seed)
       iex> seed == data
       true
 
@@ -79,7 +80,7 @@ defmodule Bip39 do
   ## Examples
 
       iex> seed = "abandon abandon ability"
-      iex> %Bip39{words: words, data: data} = from_words(seed)
+      iex> %Kryptonite.Bip39{words: words, data: data} = from_words(seed)
       iex> seed == words && data == <<0, 0, 0, 0>>
       true
 
