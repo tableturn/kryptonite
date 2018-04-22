@@ -1,4 +1,14 @@
 defmodule Kryptonite.Wordlist do
+  @moduledoc """
+  This module simply holds a list of words to be used withing various generators.
+
+  ## Examples
+
+      iex> all() |> Enum.uniq |> length >= 2048
+      true
+  """
+
+  @spec all() :: [String.t()]
   def all do
     ~w[
       abandon
