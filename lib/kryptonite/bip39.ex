@@ -5,8 +5,8 @@ defmodule Kryptonite.Bip39 do
   Its main limitation is the fact that the data **must** have a **byte size** that
   is a multiple of 4 and comprised between 4 and 1024.
   """
-  @me __MODULE__
 
+  @me __MODULE__
   @words Kryptonite.Wordlist.all()
 
   @type t :: %__MODULE__{words: String.t(), data: binary, checksum: bitstring}
