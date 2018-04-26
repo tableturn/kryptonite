@@ -12,6 +12,7 @@ defmodule Kryptonite.MixProject do
       name: "Kryptonite",
       source_url: "https://github.com/the-missing-link/kryptonite",
       homepage_url: "https://github.com/the-missing-link/kryptonite",
+      dialyzer: [plt_add_deps: :project],
       docs: [extras: ~w(README.md)],
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: cli_env_for(:test, ~w(
@@ -35,10 +36,11 @@ defmodule Kryptonite.MixProject do
 
   defp deps do
     [
+      # Dev and Test only.
+      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Dev only.
       {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
-      {:credo, "~> 0.8", only: :dev, runtime: false},
-      {:dialyxir, "~> 0.5", only: :dev, runtime: false},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       {:excoveralls, "~> 0.8", only: :test, runtime: false}
     ]

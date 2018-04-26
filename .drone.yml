@@ -1,7 +1,7 @@
 matrix:
   ELIXIR_VERSION:
-    - 1.4
-    - 1.5
+    # - 1.4
+    # - 1.5
     - 1.6
 
 pipeline:
@@ -16,10 +16,9 @@ pipeline:
     image: elixir:${ELIXIR_VERSION}
     secrets: [codecov_token]
     commands:
-      - MIX_ENV=test mix do
-        local.rebar --force, local.hex --force,
-        deps.get, compile,
-        coveralls.json
+      - mix do local.rebar --force, local.hex --force
+      - MIX_ENV=dev mix do deps.get, compile, format --check-formatted, credo --all, dialyzer
+      - MIX_ENV=test mix do deps.get, compile, coveralls.json
 
   codecov:
     image: robertstettner/drone-codecov
