@@ -15,6 +15,7 @@ defmodule Kryptonite.MixProject do
       dialyzer: [plt_add_deps: :project],
       docs: [extras: ~w(README.md)],
       test_coverage: [tool: ExCoveralls],
+      dialyzer: [plt_add_deps: :project, plt_add_apps: [:public_key]],
       preferred_cli_env: cli_env_for(:test, ~w(
         coveralls coveralls.detail coveralls.html coveralls.json coveralls.post
         vcr.delete vcr.check vcr.show
