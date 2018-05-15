@@ -34,7 +34,6 @@ defmodule Kryptonite.AES do
       iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
       iex> decrypt_gcm(wrong_key, iv, ad, cypher, tag)
       {:error, :decryption_error}
-
   """
 
   alias Kryptonite.Random
