@@ -1,4 +1,5 @@
 defmodule Kryptonite.RSA do
+  @moduledoc false
   alias Kryptonite.RSA.{PrivateKey, PublicKey}
 
   @type message :: binary
