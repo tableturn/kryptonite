@@ -6,6 +6,19 @@
 
 A kollektion of scripts that are very close to cryptography but aren't - hence the typo.
 
+## Motivations
+
+We initially were using the excellent [`ExCrypto`](https://github.com/ntrepid8/ex_crypto).
+For all intent and purposes, that's what you should be using. However, we quickly realized
+that [`ExCrypto`](https://github.com/ntrepid8/ex_crypto) is:
+
+- Performing superfluous operations (Base64 encoding, computing key fingerprints, etc).
+- Offering outdated options (AES `:notsup` key lengths).
+- Not offering some of the functions we needed (Mnemonics etc).
+
+This is why we decided to roll our own. We also are aiming for an evergreen coverage
+and typespec.
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
