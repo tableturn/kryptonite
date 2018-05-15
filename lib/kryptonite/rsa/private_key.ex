@@ -1,5 +1,13 @@
 defmodule Kryptonite.RSA.PrivateKey do
-  @moduledoc false
+  @moduledoc """
+  This module provides abstraction around Erlang's `:public_key` functions that
+  aim to manipulate private keys.
+
+  Most if not all of the functions in this module are meant to be easily compatible
+  with elixir's `with` construct, and therefore returns something that can always
+  be pattern-matched for success (Typically a `{:ok, value}` tuple).
+  """
+
   alias Kryptonite.RSA
   alias Kryptonite.RSA.PublicKey
 
@@ -19,7 +27,6 @@ defmodule Kryptonite.RSA.PrivateKey do
           ctr_coefficient: pos_integer,
           other_prime_infos: atom
         }
-
   defstruct [
     :version,
     :public_modulus,
@@ -33,6 +40,10 @@ defmodule Kryptonite.RSA.PrivateKey do
     :other_prime_infos
   ]
 
+  @doc """
+  This function is used to generate a new private key given a `size_in_bits` and
+  a `public_exponent`, both of which have sane default values.
+  """
   @spec new(pos_integer, pos_integer) :: t | {:error, any}
   def new(size_in_bits \\ 1024, public_exponent \\ 65_537) when size_in_bits >= 256 do
     {:rsa, size_in_bits, public_exponent}
@@ -42,6 +53,10 @@ defmodule Kryptonite.RSA.PrivateKey do
     _, err -> {:error, {:key_generation_error, err}}
   end
 
+  @doc """
+  Can be used when an Erlang native private key has to be converted in a format that
+  this library will understand.
+  """
   @spec from_native(native) :: t | {:error, any}
   def from_native({:RSAPrivateKey, :"two-prime" = v, pm, pe, pve, pm1, pm2, e1, e2, ctrc, opi}),
     do:
@@ -61,6 +76,10 @@ defmodule Kryptonite.RSA.PrivateKey do
 
   def from_native(_), do: {:error, :invalid_native}
 
+  @doc """
+  Most of this module's function internally use Erlang's native format when performing
+  cryptographic operations; therefore this function is provided as a helper.
+  """
   @spec to_native(t) :: native | {:error, any}
   def to_native(%@me{version: :"two-prime"} = t),
     do:
@@ -73,6 +92,11 @@ defmodule Kryptonite.RSA.PrivateKey do
 
   def to_native(_), do: {:error, :invalid_private_key}
 
+  @doc """
+  Allows to extract the public components from a private key and return a
+  `Kryptonite.RSA.PublicKey.t()` construct, which later can be used to perform
+  various cryptographic operations such as decrypting cypher messages.
+  """
   @spec public_key(t) :: PublicKey.t() | {:error, any}
   def public_key(%@me{version: :"two-prime", public_modulus: pm, public_exponent: pe}),
     do: {:ok, %PublicKey{public_modulus: pm, public_exponent: pe}}
@@ -81,6 +105,9 @@ defmodule Kryptonite.RSA.PrivateKey do
 
   def public_key(_), do: {:error, :invalid_private_key}
 
+  @doc """
+  Signs a given `message` using the provided private `key`.
+  """
   @spec sign(t, RSA.message()) :: {:ok, RSA.signature()} | {:error, any}
   def sign(%@me{} = key, msg) do
     with {:ok, native_key} <- to_native(key) do
@@ -94,6 +121,12 @@ defmodule Kryptonite.RSA.PrivateKey do
 
   def sign(_, _), do: {:error, :invalid_private_key}
 
+  @doc """
+  Performs the encryption of a given `message` using the provided private `key`.
+  Note that this function will rarelly be used, as the only way to decrypt the
+  generated cypher would be using the public key, which isn't usually the intended
+  way of exchanging secure messages.
+  """
   @spec encrypt(t, RSA.message()) :: {:ok, RSA.cypher()} | {:error, any}
   def encrypt(%@me{} = key, msg) do
     with {:ok, native_key} <- to_native(key) do
@@ -107,6 +140,11 @@ defmodule Kryptonite.RSA.PrivateKey do
 
   def encrypt(_, _), do: {:error, :invalid_private_key}
 
+  @doc """
+  Performs the decryption of a given `message` using the provided private `key`.
+  The message has to be encrypted using the matching public key, or an error will
+  be returned.
+  """
   @spec decrypt(t, RSA.cypher()) :: {:ok, RSA.message()} | {:error, any}
   def decrypt(%@me{} = key, cypher_bytes) do
     with {:ok, native_key} <- to_native(key) do
