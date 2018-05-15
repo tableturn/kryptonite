@@ -4,7 +4,7 @@ defmodule Kryptonite.MixProject do
   def project do
     [
       app: :kryptonite,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -12,18 +12,16 @@ defmodule Kryptonite.MixProject do
       name: "Kryptonite",
       source_url: "https://github.com/the-missing-link/kryptonite",
       homepage_url: "https://github.com/the-missing-link/kryptonite",
-      dialyzer: [plt_add_deps: :project],
+      dialyzer: [plt_add_deps: :project, plt_add_apps: [:public_key]],
       docs: [extras: ~w(README.md)],
       test_coverage: [tool: ExCoveralls],
-      dialyzer: [plt_add_deps: :project, plt_add_apps: [:public_key]],
       preferred_cli_env: cli_env_for(:test, ~w(
         coveralls coveralls.detail coveralls.html coveralls.json coveralls.post
-        vcr.delete vcr.check vcr.show
       )),
       package: package(),
       description: """
-        A kollektion of skripts that probably are very klose to cryptography
-        but aren't - hence the typo.
+        A kollektion of scripts that are very close to cryptography but
+        aren't - hence the typo.
       """
     ]
   end

@@ -1,4 +1,5 @@
 defmodule Kryptonite.RSA.PublicKey do
+  @moduledoc false
   alias Kryptonite.RSA
 
   @me __MODULE__
