@@ -13,6 +13,28 @@ defmodule Kryptonite.AES do
       iex> {:ok, cypher} = encrypt_cbc(key, iv, "Message...")
       iex> decrypt_cbc(key, iv, cypher)
       {:ok, "Message..."}
+
+  In GCM mode, the same flow could be performed like so:
+
+      iex> {:ok, key} = generate_aes_key()
+      iex> {:ok, iv} = Kryptonite.Random.bytes(16)
+      iex> ad = "Authentication data used to guard decryption."
+      iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
+      iex> decrypt_gcm(key, iv, ad, cypher, tag)
+      {:ok, "Message..."}
+
+  The advantage of GCM Mode is that it lets you know when the message cannot be
+  decrypted properly. In other modes, you just end up with a decrypted garbaged
+  message.
+
+      iex> {:ok, key} = generate_aes_key()
+      iex> {:ok, wrong_key} = generate_aes_key()
+      iex> {:ok, iv} = Kryptonite.Random.bytes(16)
+      iex> ad = "Authentication data used to guard decryption."
+      iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
+      iex> decrypt_gcm(wrong_key, iv, ad, cypher, tag)
+      {:error, :decryption_error}
+
   """
 
   alias Kryptonite.Random
