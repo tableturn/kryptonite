@@ -4,7 +4,7 @@ defmodule Kryptonite.MixProject do
   def project do
     [
       app: :kryptonite,
-      version: "0.1.3",
+      version: "0.1.4",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -20,7 +20,7 @@ defmodule Kryptonite.MixProject do
       )),
       package: package(),
       description: """
-        A kollektion of scripts that are very close to cryptography but
+        A kollection of scripts that are very close to cryptography but
         aren't - hence the typo.
       """
     ]
