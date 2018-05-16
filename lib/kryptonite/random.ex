@@ -23,4 +23,24 @@ defmodule Kryptonite.Random do
   catch
     _, e -> {:error, e}
   end
+
+  @doc """
+  Hashes a given `digest` over itself for as many times as specified by `count`.
+
+  ## Examples
+
+      iex> m = "Some message."
+      iex> hash_round(m, 1) == hash_round(m, 2)
+      false
+      iex> hash_round(m, 2) == m |> hash_round(1) |> hash_round(1)
+      true
+  """
+  @spec hash_round(binary, pos_integer) :: <<_::512>>
+  def hash_round(digest, count) when count > 0,
+    do:
+      :sha512
+      |> :crypto.hash(digest)
+      |> hash_round(count - 1)
+
+  def hash_round(digest, _), do: digest
 end
