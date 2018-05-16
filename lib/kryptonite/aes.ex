@@ -8,7 +8,7 @@ defmodule Kryptonite.AES do
   A successful flow of key / iv generation, encryption and decryption can be
   illustrated such as:
 
-      iex> {:ok, key} = generate_aes_key()
+      iex> {:ok, key} = generate_key()
       iex> {:ok, iv} = Kryptonite.Random.bytes(16)
       iex> {:ok, cypher} = encrypt_cbc(key, iv, "Message...")
       iex> decrypt_cbc(key, iv, cypher)
@@ -16,7 +16,7 @@ defmodule Kryptonite.AES do
 
   In GCM mode, the same flow could be performed like so:
 
-      iex> {:ok, key} = generate_aes_key()
+      iex> {:ok, key} = generate_key()
       iex> {:ok, iv} = Kryptonite.Random.bytes(16)
       iex> ad = "Authentication data used to guard decryption."
       iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
@@ -27,8 +27,8 @@ defmodule Kryptonite.AES do
   decrypted properly. In other modes, you just end up with a decrypted garbaged
   message.
 
-      iex> {:ok, key} = generate_aes_key()
-      iex> {:ok, wrong_key} = generate_aes_key()
+      iex> {:ok, key} = generate_key()
+      iex> {:ok, wrong_key} = generate_key()
       iex> {:ok, iv} = Kryptonite.Random.bytes(16)
       iex> ad = "Authentication data used to guard decryption."
       iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
@@ -36,32 +36,60 @@ defmodule Kryptonite.AES do
       {:error, :decryption_error}
   """
 
+  @key_byte_size 32
+  @derivation_salt Application.fetch_env!(:kryptonite, :aes_key_derivation_salt)
+  @derivation_rounds Application.fetch_env!(:kryptonite, :aes_key_derivation_rounds)
+
   alias Kryptonite.Random
 
-  @type key :: binary
-  @type iv :: binary
-  @type message :: binary
-  @type auth_data :: binary
+  @typedoc "A key is a 256 bit length bitstring."
+  @type key :: <<_::256>>
+  @typedoc "Initialization vectors must be at least 128 bits."
+  # credo:disable-for-next-line /\.Consistency\./
+  @type iv :: <<_::128, _::_*8>>
+  @typedoc "A cypher is a binary of any shape."
   @type cypher :: binary
+  @typedoc "A cypher tag is a binary of any shape."
   @type tag :: binary
+  @typedoc "A padded binary can only be multiple of 128 bits long."
+  # credo:disable-for-next-line /\.Consistency\./
+  @type padded :: <<_::_*128>>
 
   @doc """
   Generates an AES key.
 
-  The key will be formed using a random string of `length_in_bits` bits, and this
-  parameter *must* be set to `256` to ensure compatibility
-  with the underlying AES functions.
+  ## Examples
+
+      iex> {:ok, key} = generate_key()
+      iex> bit_size(key)
+      256
+      iex> generate_key() == generate_key()
+      false
+  """
+  @spec generate_key() :: {:ok, key} | {:error, any}
+  def generate_key, do: Random.bytes(@key_byte_size)
+
+  @doc """
+  Derives an AES key deterministically based on a password.
 
   ## Examples
 
-      iex> {:ok, key} = generate_aes_key()
+      iex> password = "Awesome Passw0rd!"
+      iex> {:ok, key} = derive_key(password)
       iex> bit_size(key)
       256
-      iex> generate_aes_key() != generate_aes_key()
+      iex> derive_key(password) == derive_key(password)
       true
   """
-  @spec generate_aes_key() :: {:ok, key}
-  def generate_aes_key(), do: Random.bytes(32)
+  @spec derive_key(String.t()) :: {:ok, key}
+  def derive_key(password) do
+    <<key::binary-size(@key_byte_size), _::binary>> =
+      password
+      |> salt(@derivation_salt)
+      |> Random.hash_round(@derivation_rounds)
+
+    {:ok, key}
+  end
 
   @doc """
   Encrypt a `msg` with AES in CBC mode.
@@ -73,15 +101,14 @@ defmodule Kryptonite.AES do
 
   ## Examples
 
-      iex> {{:ok, key}, {:ok, iv}} = {generate_aes_key(), Kryptonite.Random.bytes(16)}
+      iex> {{:ok, key}, {:ok, iv}} = {generate_key(), Kryptonite.Random.bytes(16)}
       iex> {:ok, cypher} = encrypt_cbc(key, iv, "Message...")
       iex> is_bitstring(cypher)
       true
   """
-  @spec encrypt_cbc(key, iv, message) :: {:ok, cypher} | {:error, any}
+  @spec encrypt_cbc(key, iv, binary) :: {:ok, cypher} | {:error, any}
   def encrypt_cbc(key, iv, msg) do
-    cypher = :crypto.block_encrypt(:aes_cbc256, key, iv, pad(msg))
-    {:ok, cypher}
+    {:ok, :crypto.block_encrypt(:aes_cbc256, key, iv, pad(msg))}
   catch
     _, e -> {:error, e}
   end
@@ -96,15 +123,15 @@ defmodule Kryptonite.AES do
 
   ## Examples
 
-      iex> {{:ok, key}, {:ok, iv}} = {generate_aes_key(), Kryptonite.Random.bytes(16)}
+      iex> {{:ok, key}, {:ok, iv}} = {generate_key(), Kryptonite.Random.bytes(16)}
       iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, "Auth", "Message...")
       iex> is_binary(cypher) and is_binary(tag)
       true
   """
-  @spec encrypt_gcm(key, iv, auth_data, message) :: {:ok, cypher, tag} | {:error, any}
+  @spec encrypt_gcm(key, iv, binary, binary) :: {:ok, cypher, tag} | {:error, any}
   def encrypt_gcm(key, iv, ad, msg) do
-    {cypher, tag} = :crypto.block_encrypt(:aes_gcm, key, iv, {ad, msg})
-    {:ok, cypher, tag}
+    :crypto.block_encrypt(:aes_gcm, key, iv, {ad, msg})
+    |> Tuple.insert_at(0, :ok)
   catch
     _, e -> {:error, e}
   end
@@ -117,19 +144,18 @@ defmodule Kryptonite.AES do
 
   ## Examples
 
-      iex> {{:ok, key}, {:ok, iv}} = {generate_aes_key(), Kryptonite.Random.bytes(16)}
+      iex> {{:ok, key}, {:ok, iv}} = {generate_key(), Kryptonite.Random.bytes(16)}
       iex> msg = "Message..."
       iex> {:ok, cypher} = encrypt_cbc(key, iv, msg)
       iex> {:ok, msg} == decrypt_cbc(key, iv, cypher)
       true
   """
-  @spec decrypt_cbc(key, iv, cypher) :: {:ok, message} | {:error, any}
+  @spec decrypt_cbc(key, iv, cypher) :: {:ok, binary} | {:error, any}
   def decrypt_cbc(key, iv, cypher) do
-    :aes_cbc256
-    |> :crypto.block_decrypt(key, iv, cypher)
-    |> unpad
-    |> Tuple.duplicate(1)
-    |> Tuple.insert_at(0, :ok)
+    {:ok,
+     :aes_cbc256
+     |> :crypto.block_decrypt(key, iv, cypher)
+     |> unpad}
   end
 
   @doc """
@@ -137,13 +163,13 @@ defmodule Kryptonite.AES do
 
   ## Examples
 
-      iex> {{:ok, key}, {:ok, iv}} = {generate_aes_key(), Kryptonite.Random.bytes(16)}
+      iex> {{:ok, key}, {:ok, iv}} = {generate_key(), Kryptonite.Random.bytes(16)}
       iex> ad = "Auth data..."
       iex> {:ok, cypher, tag} = encrypt_gcm(key, iv, ad, "Message...")
       iex> decrypt_gcm(key, iv, ad, cypher, tag)
       {:ok, "Message..."}
   """
-  @spec decrypt_gcm(key, iv, auth_data, cypher, tag) :: {:ok, message} | {:error, any}
+  @spec decrypt_gcm(key, iv, binary, cypher, tag) :: {:ok, binary} | {:error, any}
   def decrypt_gcm(key, iv, ad, cypher, tag) do
     :aes_gcm
     |> :crypto.block_decrypt(key, iv, {ad, cypher, tag})
@@ -155,15 +181,18 @@ defmodule Kryptonite.AES do
 
   # Private stuff.
 
-  @spec pad(binary) :: binary
+  @spec pad(binary) :: padded
   defp pad(data) do
     to_add = 16 - rem(byte_size(data), 16)
     data <> to_string(:string.chars(to_add, to_add))
   end
 
-  @spec unpad(binary) :: binary
+  @spec unpad(padded) :: binary
   defp unpad(data) do
     to_remove = :binary.last(data)
     :binary.part(data, 0, byte_size(data) - to_remove)
   end
+
+  @spec salt(binary, binary) :: binary
+  defp salt(stuff, salt), do: stuff <> ":" <> salt
 end
