@@ -13,8 +13,12 @@ defmodule Kryptonite.RSA.PrivateKeyTest do
       assert {:ok, %PrivateKey{}} = PrivateKey.new()
     end
 
+    test "errors when given an invalid size" do
+      assert {:error, :invalid_key_size} == PrivateKey.new(255)
+    end
+
     test "errors when given an invalid public exponent" do
-      assert {:error, {:key_generation_error, :badarg}} == PrivateKey.new(512, 1)
+      assert {:error, :invalid_public_exponent} == PrivateKey.new(512, 1)
     end
   end
 
