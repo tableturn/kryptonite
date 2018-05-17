@@ -1,9 +1,3 @@
-matrix:
-  ELIXIR_VERSION:
-    # - 1.4
-    # - 1.5
-    - 1.6
-
 pipeline:
   restore-cache:
     image: drillster/drone-volume-cache
@@ -13,7 +7,7 @@ pipeline:
       - /tmp/cache:/cache
 
   build:
-    image: elixir:${ELIXIR_VERSION}
+    image: elixir:1.6.5
     secrets: [codecov_token]
     commands:
       - mix do local.rebar --force, local.hex --force
