@@ -12,6 +12,17 @@ defmodule Kryptonite.RSA.PrivateKey do
   alias Kryptonite.RSA.PublicKey
 
   @me __MODULE__
+  @fermats [
+    3,
+    5,
+    17,
+    257,
+    65_537,
+    4_294_967_297,
+    18_446_744_073_709_551_617,
+    340_282_366_920_938_463_463_374_607_431_768_211_457,
+    115_792_089_237_316_195_423_570_985_008_687_907_853_269_984_665_640_564_039_457_584_007_913_129_639_937
+  ]
 
   @type native :: :public_key.private_key()
 
@@ -45,12 +56,13 @@ defmodule Kryptonite.RSA.PrivateKey do
   a `public_exponent`, both of which have sane default values.
   """
   @spec new(pos_integer, pos_integer) :: t | {:error, any}
-  def new(size_in_bits \\ 1024, public_exponent \\ 65_537) when size_in_bits >= 256 do
-    {:rsa, size_in_bits, public_exponent}
-    |> :public_key.generate_key()
-    |> from_native()
-  catch
-    _, err -> {:error, {:key_generation_error, err}}
+  def new(size_in_bits \\ 1024, public_exponent \\ 65_537) do
+    with true <- ensure_valid_size(size_in_bits),
+         true <- ensure_valid_fermat(public_exponent) do
+      {:rsa, size_in_bits, public_exponent}
+      |> :public_key.generate_key()
+      |> from_native()
+    end
   end
 
   @doc """
@@ -157,4 +169,16 @@ defmodule Kryptonite.RSA.PrivateKey do
   end
 
   def decrypt(_, _), do: {:error, :invalid_private_key}
+
+  # Private stuff.
+
+  @spec ensure_valid_size(pos_integer) :: true | {:error, any}
+  defp ensure_valid_size(size_in_bits) when size_in_bits < 256, do: {:error, :invalid_key_size}
+
+  defp ensure_valid_size(s),
+    do: rem(s, 512) == 0 || {:error, :invalid_key_size}
+
+  @spec ensure_valid_fermat(pos_integer) :: true | {:error, :invalid_public_exponent}
+  defp ensure_valid_fermat(e),
+    do: e in @fermats || {:error, :invalid_public_exponent}
 end

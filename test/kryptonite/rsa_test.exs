@@ -14,8 +14,12 @@ defmodule Kryptonite.RSATest do
       assert {:ok, %PrivateKey{}, %PublicKey{}} = RSA.new_keypair()
     end
 
+    test "errors when given an invalid size" do
+      assert {:error, :invalid_key_size} == RSA.new_keypair(255, 65_537)
+    end
+
     test "errors when given an invalid public exponent" do
-      assert {:error, {:key_generation_error, :badarg}} == RSA.new_keypair(512, 1)
+      assert {:error, :invalid_public_exponent} == RSA.new_keypair(1_024, 1)
     end
   end
 
@@ -59,8 +63,9 @@ defmodule Kryptonite.RSATest do
   end
 
   defp keys(_) do
-    {:ok, priv1, pub1} = RSA.new_keypair(512)
-    {:ok, priv2, pub2} = RSA.new_keypair(512)
+    {:ok, priv1, pub1} = RSA.new_keypair(1024, 65_537)
+
+    {:ok, priv2, pub2} = RSA.new_keypair(1024)
     {:ok, priv1: priv1, pub1: pub1, priv2: priv2, pub2: pub2}
   end
 
