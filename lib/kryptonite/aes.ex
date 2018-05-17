@@ -138,7 +138,8 @@ defmodule Kryptonite.AES do
   """
   @spec encrypt_gcm(key, iv, binary, binary) :: {:ok, cypher, tag} | {:error, any}
   def encrypt_gcm(key, iv, ad, msg) do
-    :crypto.block_encrypt(:aes_gcm, key, iv, {ad, msg})
+    :aes_gcm
+    |> :crypto.block_encrypt(key, iv, {ad, msg})
     |> Tuple.insert_at(0, :ok)
   catch
     _, e -> {:error, e}
