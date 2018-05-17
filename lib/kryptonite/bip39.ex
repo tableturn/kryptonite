@@ -9,8 +9,9 @@ defmodule Kryptonite.Bip39 do
   @me __MODULE__
   @words Kryptonite.Wordlist.all()
 
+  @typedoc "The `t()` type exposes a mnemonic construct."
   @type t :: %__MODULE__{words: String.t(), data: binary, checksum: bitstring}
-  defstruct words: nil, data: nil, checksum: nil
+  defstruct ~w(words data checksum)a
 
   @doc """
   Generates random entropy of the given `size_in_bytes` and its associated wording.
@@ -96,7 +97,7 @@ defmodule Kryptonite.Bip39 do
   """
   @spec from_words(String.t()) :: t | {:error, atom}
   def from_words(words) do
-    with {:ok, {data, checksum}} <- to_data(words),
+    with {:ok, data, checksum} <- to_data(words),
          true <- ensure_matching_checksum(data, checksum) do
       %@me{words: words, data: data, checksum: checksum}
     end
@@ -104,7 +105,7 @@ defmodule Kryptonite.Bip39 do
 
   # Private stuff.
 
-  @spec to_words(binary, bitstring) :: String.t() | {:error, :invalid_word | :invalid_checksum}
+  @spec to_words(binary, bitstring) :: String.t()
   defp to_words(data, checksum) do
     for <<(index::11 <- <<data::bits, checksum::bits>>)>> do
       Enum.at(@words, index)
@@ -112,7 +113,7 @@ defmodule Kryptonite.Bip39 do
     |> Enum.join(" ")
   end
 
-  @spec to_data(String.t()) :: {:ok, {binary, bitstring}} | {:error, :invalid_word}
+  @spec to_data(String.t()) :: {:ok, binary, bitstring} | {:error, :invalid_word}
   defp to_data(words) do
     bits =
       words
@@ -124,7 +125,7 @@ defmodule Kryptonite.Bip39 do
       checksum_size = div(len - div(len, 33), 32)
       data_size = div(len - checksum_size, 8)
       <<data::binary-size(data_size), checksum::bits>> = bits
-      {:ok, {data, checksum}}
+      {:ok, data, checksum}
     end
   end
 
@@ -139,15 +140,13 @@ defmodule Kryptonite.Bip39 do
     end
   end
 
-  @spec ensure_valid_data_size(pos_integer) :: boolean | {:error, :invalid_data_size}
-  defp ensure_valid_data_size(size) do
-    (size >= 4 && size <= 1024 && rem(size, 4) == 0) || {:error, :invalid_data_size}
-  end
+  @spec ensure_valid_data_size(pos_integer) :: true | {:error, :invalid_data_size}
+  defp ensure_valid_data_size(size),
+    do: (size >= 4 && size <= 1024 && rem(size, 4) == 0) || {:error, :invalid_data_size}
 
   @spec ensure_matching_checksum(binary, bitstring) :: true | {:error, :invalid_checksum}
-  def ensure_matching_checksum(data, checksum) do
-    checksum == compute_checksum(data) || {:error, :invalid_checksum}
-  end
+  defp ensure_matching_checksum(data, checksum),
+    do: checksum == compute_checksum(data) || {:error, :invalid_checksum}
 
   @spec compute_checksum(binary) :: bitstring
   defp compute_checksum(data) do
