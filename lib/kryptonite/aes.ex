@@ -13,7 +13,7 @@ defmodule Kryptonite.AES do
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
       iex> {:ok, cypher} = encrypt_cbc(key, iv, "Message...")
       iex> decrypt_cbc(key, iv, cypher)
-      {:ok, "Message..."}
+      "Message..."
 
   In GCM mode, the same flow could be performed like so:
 
@@ -155,16 +155,15 @@ defmodule Kryptonite.AES do
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
       iex> msg = "Message..."
       iex> {:ok, cypher} = encrypt_cbc(key, iv, msg)
-      iex> {:ok, msg} == decrypt_cbc(key, iv, cypher)
+      iex> msg == decrypt_cbc(key, iv, cypher)
       true
   """
-  @spec decrypt_cbc(key, iv, cypher) :: {:ok, binary} | {:error, any}
-  def decrypt_cbc(key, iv, cypher) do
-    {:ok,
-     :aes_cbc256
-     |> :crypto.block_decrypt(key, iv, cypher)
-     |> unpad}
-  end
+  @spec decrypt_cbc(key, iv, cypher) :: binary
+  def decrypt_cbc(key, iv, cypher),
+    do:
+      :aes_cbc256
+      |> :crypto.block_decrypt(key, iv, cypher)
+      |> unpad()
 
   @doc """
   Decrypts a `cypher` using AES in GCM mode.
