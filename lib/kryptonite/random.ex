@@ -57,4 +57,33 @@ defmodule Kryptonite.Random do
       |> hash_round(count - 1)
 
   def hash_round(digest, _), do: digest
+
+  @doc """
+  Calculates the entropy rating of a given binary.
+
+  The Shannon index is calculated by looking at the recurence of values in
+  the given `input` binary.
+
+  ## Examples
+
+      iex> shannon_entropy <<0xCaffee, 0xBadF00d,>>
+      1.0
+      iex> shannon_entropy <<1, 2, 3, 4>>
+      2.0
+      iex> shannon_entropy "1223334444"
+      1.8464393446710154
+  """
+  @spec shannon_entropy(binary) :: float
+  def shannon_entropy(input) do
+    len = String.length(input)
+
+    input
+    |> String.graphemes()
+    |> Enum.group_by(& &1)
+    |> Enum.map(fn {_, value} -> length(value) end)
+    |> Enum.reduce(0, fn count, entropy ->
+      freq = count / len
+      entropy - freq * :math.log2(freq)
+    end)
+  end
 end
