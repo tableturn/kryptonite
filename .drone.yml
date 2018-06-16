@@ -1,43 +1,52 @@
 matrix:
   ELIXIR_TAG:
-    - 1.4
     - 1.5
     - 1.6
 
 pipeline:
+  # Get cached stuff from last run.
   restore-cache:
     image: drillster/drone-volume-cache
     restore: true
+    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
       - /tmp/cache:/cache
 
+  # Run tests for each matrix elixir version.
   build:
     image: elixir:${ELIXIR_TAG}
     commands:
-      - mix do local.rebar --force, local.hex --force
-      - MIX_ENV=test mix do deps.get, test
+      - mix do local.rebar --force, local.hex --force, deps.get
+      - MIX_ENV=test mix test
 
+  # Check code formatting, linting and dialyze it using latest elixir.
   checks:
-    image: elixir:1.6
     when:
-      ELIXIR_TAG: 1.6
+      matrix:
+        ELIXIR_TAG: 1.6
+    image: elixir:${ELIXIR_TAG}
     commands:
-      - mix do local.rebar --force, local.hex --force
-      - MIX_ENV=dev  mix do deps.get, format --check-formatted, credo --all, dialyzer
-      - MIX_ENV=test mix do deps.get, coveralls.json
+      - mix do local.rebar --force, local.hex --force, deps.get
+      - MIX_ENV=dev mix do format --check-formatted, credo --all, dialyzer
+      - MIX_ENV=test mix coveralls.json
 
+  # Upload coverage reports, only for the latest elixir.
   codecov:
-    image: robertstettner/drone-codecov
-    secrets: [codecov_token]
     when:
       status: [success]
+      matrix:
+        ELIXIR_TAG: 1.6
+    image: robertstettner/drone-codecov
+    secrets: [codecov_token]
     files:
       - cover/excoveralls.json
 
+  # Store cache every time a build succeeds.
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true
+    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
       - /tmp/cache:/cache
