@@ -5,7 +5,7 @@ defmodule Kryptonite.MixProject do
     [
       app: :kryptonite,
       version: "0.1.7",
-      elixir: "~> 1.4",
+      elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
