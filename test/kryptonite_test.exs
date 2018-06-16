@@ -8,6 +8,8 @@ defmodule KryptoniteTest do
   doctest Wordlist, import: true
 
   @password "Strong P4ssw0rd!~"
+  @opts [salt: "Peppery-saltidysalt.", rounds: 32]
+
   @words "flee chat speed area sort inspire middle problem three hire present noodle " <>
            "frame smooth bubble turtle spot thrive blanket outer language rather salmon latin"
 
@@ -15,7 +17,7 @@ defmodule KryptoniteTest do
     test "can convert from a password to an AES key to a mnemonic" do
       %{words: words} =
         @password
-        |> AES.derive_key()
+        |> AES.derive_key(@opts)
         |> Bip39.from_data()
 
       assert @words == words
@@ -23,7 +25,7 @@ defmodule KryptoniteTest do
 
     test "can convert from a mnemonic to an AES key" do
       %{data: key} = Bip39.from_words(@words)
-      assert AES.derive_key(@password) == key
+      assert AES.derive_key(@password, @opts) == key
     end
   end
 end
