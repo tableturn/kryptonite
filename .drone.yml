@@ -1,3 +1,9 @@
+matrix:
+  ELIXIR_TAG:
+    - 1.4
+    - 1.5
+    - 1.6
+
 pipeline:
   restore-cache:
     image: drillster/drone-volume-cache
@@ -7,12 +13,19 @@ pipeline:
       - /tmp/cache:/cache
 
   build:
-    image: elixir:1.6.5
-    secrets: [codecov_token]
+    image: elixir:${ELIXIR_TAG}
     commands:
       - mix do local.rebar --force, local.hex --force
-      - MIX_ENV=dev mix do deps.get, compile, format --check-formatted, credo --all, dialyzer
-      - MIX_ENV=test mix do deps.get, compile, coveralls.json
+      - MIX_ENV=test mix do deps.get, test
+
+  checks:
+    image: elixir:1.6
+    when:
+      ELIXIR_TAG: 1.6
+    commands:
+      - mix do local.rebar --force, local.hex --force
+      - MIX_ENV=dev  mix do deps.get, format --check-formatted, credo --all, dialyzer
+      - MIX_ENV=test mix do deps.get, coveralls.json
 
   codecov:
     image: robertstettner/drone-codecov
