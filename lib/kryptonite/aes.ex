@@ -35,8 +35,6 @@ defmodule Kryptonite.AES do
   """
 
   @key_byte_size 32
-  @derivation_salt Application.fetch_env!(:kryptonite, :aes_key_derivation_salt)
-  @derivation_rounds Application.fetch_env!(:kryptonite, :aes_key_derivation_rounds)
 
   @typedoc "A key is a 256 bit length bitstring."
   @type key :: <<_::256>>
@@ -85,17 +83,18 @@ defmodule Kryptonite.AES do
   ## Examples
 
       iex> password = "Awesome Passw0rd!"
-      iex> bit_size(derive_key(password))
+      iex> opts = [salt: "S", rounds: 2]
+      iex> bit_size(derive_key(password, opts))
       256
-      iex> derive_key(password) == derive_key(password)
+      iex> derive_key(password, opts) == derive_key(password, opts)
       true
   """
-  @spec derive_key(String.t()) :: key
-  def derive_key(password) do
+  @spec derive_key(String.t(), keyword) :: key
+  def derive_key(password, opts) do
     <<key::binary-size(@key_byte_size), _::binary>> =
       password
-      |> salt(@derivation_salt)
-      |> Random.hash_round(@derivation_rounds)
+      |> salt(Keyword.fetch!(opts, :salt))
+      |> Random.hash_round(Keyword.fetch!(opts, :rounds))
 
     key
   end
