@@ -55,7 +55,7 @@ defmodule Kryptonite.RSA.PrivateKey do
   This function is used to generate a new private key given a `size_in_bits` and
   a `public_exponent`, both of which have sane default values.
   """
-  @spec new(pos_integer, pos_integer) :: t | {:error, any}
+  @spec new(pos_integer, pos_integer) :: {:ok, t} | {:error, any}
   def new(size_in_bits \\ 1024, public_exponent \\ 65_537) do
     with true <- ensure_valid_size(size_in_bits),
          true <- ensure_valid_fermat(public_exponent) do
@@ -69,7 +69,7 @@ defmodule Kryptonite.RSA.PrivateKey do
   Can be used when an Erlang native private key has to be converted in a format that
   this library will understand.
   """
-  @spec from_native(native) :: t | {:error, any}
+  @spec from_native(native) :: {:ok, t} | {:error, any}
   def from_native({:RSAPrivateKey, :"two-prime" = v, pm, pe, pve, pm1, pm2, e1, e2, ctrc, opi}),
     do:
       {:ok,
@@ -92,7 +92,7 @@ defmodule Kryptonite.RSA.PrivateKey do
   Most of this module's function internally use Erlang's native format when performing
   cryptographic operations; therefore this function is provided as a helper.
   """
-  @spec to_native(t) :: native | {:error, any}
+  @spec to_native(t) :: {:ok, native} | {:error, any}
   def to_native(%@me{version: :"two-prime"} = t),
     do:
       {:ok,
@@ -109,7 +109,7 @@ defmodule Kryptonite.RSA.PrivateKey do
   `Kryptonite.RSA.PublicKey.t()` construct, which later can be used to perform
   various cryptographic operations such as decrypting cypher messages.
   """
-  @spec public_key(t) :: PublicKey.t() | {:error, any}
+  @spec public_key(t) :: {:ok, PublicKey.t()} | {:error, any}
   def public_key(%@me{version: :"two-prime", public_modulus: pm, public_exponent: pe}),
     do: {:ok, %PublicKey{public_modulus: pm, public_exponent: pe}}
 
