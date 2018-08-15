@@ -2,6 +2,7 @@ matrix:
   ELIXIR_TAG:
     - 1.5
     - 1.6
+    - 1.7
 
 pipeline:
   # Get cached stuff from last run.
@@ -24,7 +25,7 @@ pipeline:
   checks:
     when:
       matrix:
-        ELIXIR_TAG: 1.6
+        ELIXIR_TAG: 1.7
     image: elixir:${ELIXIR_TAG}
     commands:
       - mix do local.rebar --force, local.hex --force, deps.get
@@ -36,7 +37,7 @@ pipeline:
     when:
       status: [success]
       matrix:
-        ELIXIR_TAG: 1.6
+        ELIXIR_TAG: 1.7
     image: robertstettner/drone-codecov
     secrets: [codecov_token]
     files:
