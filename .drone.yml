@@ -18,8 +18,8 @@ pipeline:
   build:
     image: elixir:${ELIXIR_TAG}
     commands:
-      - mix do local.rebar --force, local.hex --force, deps.get
-      - MIX_ENV=test mix test
+      - mix do local.rebar --force, local.hex --force
+      - MIX_ENV=test mix do deps.get, test
 
   # Check code formatting, linting and dialyze it using latest elixir.
   checks:
@@ -28,9 +28,9 @@ pipeline:
         ELIXIR_TAG: 1.7
     image: elixir:${ELIXIR_TAG}
     commands:
-      - mix do local.rebar --force, local.hex --force, deps.get
-      - MIX_ENV=dev mix do format --check-formatted, credo --all, dialyzer
-      - MIX_ENV=test mix coveralls.json
+      - mix do local.rebar --force, local.hex --force
+      - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
+      - MIX_ENV=test mix do deps.get, coveralls.json
 
   # Upload coverage reports, only for the latest elixir.
   codecov:
