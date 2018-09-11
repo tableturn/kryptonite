@@ -4,7 +4,7 @@ defmodule Kryptonite.MixProject do
   def project do
     [
       app: :kryptonite,
-      version: "0.1.9",
+      version: "0.1.10",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -19,10 +19,8 @@ defmodule Kryptonite.MixProject do
         coveralls coveralls.detail coveralls.html coveralls.json coveralls.post
       )),
       package: package(),
-      description: """
-        A kollection of scripts that are very close to cryptography but
-        aren't - hence the typo.
-      """
+      description:
+        "A collection of modules that are very close to cryptography but aren't - hence the typo."
     ]
   end
 
