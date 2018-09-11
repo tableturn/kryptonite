@@ -90,14 +90,12 @@ defmodule Kryptonite.AES do
       true
   """
   @spec derive_key(String.t(), keyword) :: key
-  def derive_key(password, opts) do
-    <<key::binary-size(@key_byte_size), _::binary>> =
+  def derive_key(password, opts),
+    do:
       password
       |> salt(Keyword.fetch!(opts, :salt))
       |> Random.hash_round(Keyword.fetch!(opts, :rounds))
-
-    key
-  end
+      |> cut_key()
 
   @doc """
   Encrypt a `msg` with AES in CBC mode.
@@ -202,4 +200,7 @@ defmodule Kryptonite.AES do
 
   @spec salt(binary, binary) :: binary
   defp salt(stuff, salt), do: stuff <> ":" <> salt
+
+  @spec cut_key(binary) :: binary
+  defp cut_key(<<key::binary-size(@key_byte_size), _::binary>>), do: key
 end
