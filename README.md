@@ -4,7 +4,7 @@
 [![Coverage Report](https://codecov.io/gh/the-missing-link/kryptonite/branch/master/graph/badge.svg?token=xsuechvNxp)](https://codecov.io/gh/the-missing-link/kryptonite)
 [![Hex.pm](https://img.shields.io/hexpm/dt/kryptonite.svg)](https://hex.pm/packages/kryptonite)
 
-A kollektion of scripts that are very close to cryptography but aren't - hence the typo.
+A collection of modules that are very close to cryptography but aren't - hence the typo.
 
 ## Motivations
 
