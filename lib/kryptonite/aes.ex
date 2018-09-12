@@ -143,13 +143,15 @@ defmodule Kryptonite.AES do
   end
 
   @doc """
-  Encrypt a stream using AES in CTR mode.
+  Encrypts a stream using AES in CTR mode.
 
   ## Examples
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
-      iex> cypher = 'This is a secret' |> stream_encrypt(key, iv) |> Enum.to_list()
-      iex> is_list(cypher)
+      iex> "This is a secret"
+      ...>     |> stream_encrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> is_list(cypher)
       true
   """
   @spec stream_encrypt(Enumerable.t, key, iv) :: Enumerable.t
@@ -211,8 +213,13 @@ defmodule Kryptonite.AES do
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
       iex> msg = "This is a secret..."
-      iex> cypher = msg |> String.to_charlist() |> stream_encrypt(key, iv) |> Enum.to_list()
-      iex> msg == cypher |> stream_decrypt(key, iv) |> Enum.to_list() |> :erlang.iolist_to_binary
+      iex> msg == msg
+      ...>     |> String.to_charlist()
+      ...>     |> stream_encrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> stream_decrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> :erlang.iolist_to_binary
       true
   """
   @spec stream_decrypt(Enumerable.t, key, iv) :: Enumerable.t
