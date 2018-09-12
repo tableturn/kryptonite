@@ -143,6 +143,26 @@ defmodule Kryptonite.AES do
   end
 
   @doc """
+  Encrypt a stream using AES in CTR mode.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> cypher = 'This is a secret' |> stream_encrypt(key, iv) |> Enum.to_list()
+      iex> is_list(cypher)
+      true
+  """
+  @spec stream_encrypt(Enumerable.t, key, iv) :: Enumerable.t
+  def stream_encrypt(stream, key, iv) do
+    acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+    reduce = fn elem, acc ->
+      {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
+      {[cypher], acc}
+    end
+    Stream.transform(stream, acc0, reduce)
+  end
+
+  @doc """
   Decrypts a `cypher` using AES in CBC mode.
 
   This function must be provided with the same initialization vector `iv` that
@@ -182,6 +202,27 @@ defmodule Kryptonite.AES do
       :error -> {:error, :decryption_error}
       msg when is_binary(msg) -> {:ok, msg}
     end
+  end
+
+  @doc """
+  Decrypts a stream using AES in CTR mode.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> msg = "This is a secret..."
+      iex> cypher = msg |> String.to_charlist() |> stream_encrypt(key, iv) |> Enum.to_list()
+      iex> msg == cypher |> stream_decrypt(key, iv) |> Enum.to_list() |> :erlang.iolist_to_binary
+      true
+  """
+  @spec stream_decrypt(Enumerable.t, key, iv) :: Enumerable.t
+  def stream_decrypt(stream, key, iv) do
+    acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+    reduce = fn elem, acc ->
+      {acc, cypher} = :crypto.stream_decrypt(acc, elem)
+      {[cypher], acc}
+    end
+    Stream.transform(stream, acc0, reduce)
   end
 
   # Private stuff.
