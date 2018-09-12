@@ -148,10 +148,10 @@ defmodule Kryptonite.AES do
   ## Examples
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
-      iex> "This is a secret"
+      iex> 'This is a secret'
       ...>     |> stream_encrypt(key, iv)
       ...>     |> Enum.to_list()
-      ...>     |> is_list(cypher)
+      ...>     |> is_list()
       true
   """
   @spec stream_encrypt(Enumerable.t, key, iv) :: Enumerable.t
