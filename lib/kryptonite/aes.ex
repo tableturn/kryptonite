@@ -154,13 +154,15 @@ defmodule Kryptonite.AES do
       ...>     |> is_list()
       true
   """
-  @spec stream_encrypt(Enumerable.t, key, iv) :: Enumerable.t
+  @spec stream_encrypt(Enumerable.t(), key, iv) :: Enumerable.t()
   def stream_encrypt(stream, key, iv) do
     acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+
     reduce = fn elem, acc ->
       {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
       {[cypher], acc}
     end
+
     Stream.transform(stream, acc0, reduce)
   end
 
@@ -222,13 +224,15 @@ defmodule Kryptonite.AES do
       ...>     |> :erlang.iolist_to_binary
       true
   """
-  @spec stream_decrypt(Enumerable.t, key, iv) :: Enumerable.t
+  @spec stream_decrypt(Enumerable.t(), key, iv) :: Enumerable.t()
   def stream_decrypt(stream, key, iv) do
     acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+
     reduce = fn elem, acc ->
       {acc, cypher} = :crypto.stream_decrypt(acc, elem)
       {[cypher], acc}
     end
+
     Stream.transform(stream, acc0, reduce)
   end
 
