@@ -166,6 +166,46 @@ defmodule Kryptonite.AES do
     Stream.transform(stream, acc0, reduce)
   end
 
+  @doc """ 
+  Encrypts + HMAC a stream into a Collectable
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> File.write!("/tmp/plain.txt", "This is a secret")
+      iex> {:ok, tag} =
+      ...>   "/tmp/plain.txt"
+      ...>   |> File.stream!()
+      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
+      iex> {File.rm!("/tmp/plain.txt"), File.rm!("/tmp/secret.aes")}
+      iex> is_binary(tag)
+      true
+  """
+  @spec stream_encrypt(Enumerable.t, Collectable.t, key, iv, binary) :: {:ok, tag}
+  def stream_encrypt(in_stream, out_stream, key, iv, ad) do
+    # :P
+    mac_store = spawn_hmac(:sha256, ad)
+    aes_ctx =
+      :aes_ctr
+      |> :crypto.stream_init(key, iv)
+    acc0 = %{mac: mac_store, aes: aes_ctx}
+
+    reducer = fn elem, %{mac: mac_store, aes: aes_ctx}=acc ->
+      {aes_ctx, cypher} = :crypto.stream_encrypt(aes_ctx, elem |> List.wrap())
+      :ok = update_hmac(mac_store, cypher)
+      {[cypher], %{acc | aes: aes_ctx}}
+    end
+
+    :ok =
+      [iv]
+      |> Stream.concat(in_stream)
+      |> Stream.transform(acc0, reducer)
+      |> Stream.into(out_stream)
+      |> Stream.run()
+
+    {:ok, get_hmac(mac_store)}
+  end
+
   @doc """
   Decrypts a `cypher` using AES in CBC mode.
 
@@ -255,4 +295,42 @@ defmodule Kryptonite.AES do
 
   @spec cut_key(binary) :: binary
   defp cut_key(<<key::binary-size(@key_byte_size), _::binary>>), do: key
+
+  ###
+  ### HMAC computer
+  ###
+  def spawn_hmac(type, key) do
+    from = self()
+    
+    spawn_link(fn ->
+      type
+      |> :crypto.hmac_init(key)
+      |> loop_hmac(from)
+    end)
+  end
+
+  defp loop_hmac(ctx, from) do
+    receive do
+      {:update, ^from, data} ->
+        ctx
+        |> :crypto.hmac_update(data)
+        |> loop_hmac(from)
+
+      {:get, ^from} ->
+        tag = :crypto.hmac_final(ctx)
+        send(from, {:tag, self(), tag})
+    end
+  end
+
+  def update_hmac(pid, data) do
+    _ = send(pid, {:update, self(), data})
+    :ok
+  end
+
+  def get_hmac(pid) do
+    _ = send(pid, {:get, self()})
+    receive do
+      {:tag, ^pid, tag} -> tag
+    end
+  end
 end
