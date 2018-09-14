@@ -34,7 +34,16 @@ defmodule Kryptonite.AES do
       {:error, :decryption_error}
   """
 
+  defmodule StreamIntegrityError do
+    defexception message: "Stream integrity failed to check"
+
+    @moduledoc """
+    Error when checking integrity of AES encrypted stream
+    """
+  end
+
   @key_byte_size 32
+  @hmac_type :sha256
 
   @typedoc "A key is a 256 bit length bitstring."
   @type key :: <<_::256>>
@@ -183,27 +192,55 @@ defmodule Kryptonite.AES do
   """
   @spec stream_encrypt(Enumerable.t, Collectable.t, key, iv, binary) :: {:ok, tag}
   def stream_encrypt(in_stream, out_stream, key, iv, ad) do
-    # :P
-    mac_store = spawn_hmac(:sha256, ad)
-    aes_ctx =
+    acc =
       :aes_ctr
       |> :crypto.stream_init(key, iv)
-    acc0 = %{mac: mac_store, aes: aes_ctx}
 
-    reducer = fn elem, %{mac: mac_store, aes: aes_ctx}=acc ->
-      {aes_ctx, cypher} = :crypto.stream_encrypt(aes_ctx, elem |> List.wrap())
-      :ok = update_hmac(mac_store, cypher)
-      {[cypher], %{acc | aes: aes_ctx}}
-    end
-
-    :ok =
-      [iv]
-      |> Stream.concat(in_stream)
-      |> Stream.transform(acc0, reducer)
+    enc_stream =
+      in_stream
+      |> Stream.transform(acc, &do_stream_encrypt/2)
       |> Stream.into(out_stream)
-      |> Stream.run()
 
-    {:ok, get_hmac(mac_store)}
+    tag =
+      [iv]
+      |> Stream.concat(enc_stream)
+      |> stream_tag(ad)
+
+    {:ok, tag}
+  end
+
+  @doc """
+  Check integrity then decrypts a stream encrypted with `stream_encrypt/5`
+
+  Raise `Kryptonite.AES.StreamIntegrityError` in case of integrity checking error.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> File.write!("/tmp/plain.txt", "This is a secret")
+      iex> {:ok, tag} =
+      ...>   "/tmp/plain.txt"
+      ...>   |> File.stream!()
+      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
+      iex> File.stream!("/tmp/secret.aes")
+      ...>   |> stream_decrypt!(key, iv, "Auth...", tag)
+      ...>   |> Enum.to_list()
+      ...>   |> IO.iodata_to_binary()
+      "This is a secret"
+  """
+  @spec stream_decrypt!(Enumerable.t, key, binary, iv, tag) :: Enumerable.t
+  def stream_decrypt!(in_stream, key, iv, ad, tag) do
+    [iv]
+    |> Stream.concat(in_stream)
+    |> stream_tag(ad)
+    |> case do
+      ^tag ->
+        in_stream
+        |> stream_decrypt(key, iv)
+        
+      _ ->
+        raise StreamIntegrityError
+    end
   end
 
   @doc """
@@ -266,7 +303,9 @@ defmodule Kryptonite.AES do
   """
   @spec stream_decrypt(Enumerable.t(), key, iv) :: Enumerable.t()
   def stream_decrypt(stream, key, iv) do
-    acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+    acc0 =
+      :aes_ctr
+      |> :crypto.stream_init(key, iv)
 
     reduce = fn elem, acc ->
       {acc, cypher} = :crypto.stream_decrypt(acc, elem)
@@ -274,6 +313,18 @@ defmodule Kryptonite.AES do
     end
 
     Stream.transform(stream, acc0, reduce)
+  end
+
+  @doc """
+  Returns computed AES + HMAC encoded stream tag
+  """
+  @spec stream_tag(Enumerable.t, binary) :: tag
+  def stream_tag(stream, key) do
+    stream
+    |> Enum.reduce(:crypto.hmac_init(@hmac_type, key), fn data, acc ->
+      :crypto.hmac_update(acc, data)
+    end)
+    |> :crypto.hmac_final()
   end
 
   # Private stuff.
@@ -296,41 +347,8 @@ defmodule Kryptonite.AES do
   @spec cut_key(binary) :: binary
   defp cut_key(<<key::binary-size(@key_byte_size), _::binary>>), do: key
 
-  ###
-  ### HMAC computer
-  ###
-  def spawn_hmac(type, key) do
-    from = self()
-    
-    spawn_link(fn ->
-      type
-      |> :crypto.hmac_init(key)
-      |> loop_hmac(from)
-    end)
-  end
-
-  defp loop_hmac(ctx, from) do
-    receive do
-      {:update, ^from, data} ->
-        ctx
-        |> :crypto.hmac_update(data)
-        |> loop_hmac(from)
-
-      {:get, ^from} ->
-        tag = :crypto.hmac_final(ctx)
-        send(from, {:tag, self(), tag})
-    end
-  end
-
-  def update_hmac(pid, data) do
-    _ = send(pid, {:update, self(), data})
-    :ok
-  end
-
-  def get_hmac(pid) do
-    _ = send(pid, {:get, self()})
-    receive do
-      {:tag, ^pid, tag} -> tag
-    end
+  defp do_stream_encrypt(elem, acc) do
+    {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
+    {[cypher], acc}
   end
 end
