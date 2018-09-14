@@ -34,7 +34,16 @@ defmodule Kryptonite.AES do
       {:error, :decryption_error}
   """
 
+  defmodule StreamIntegrityError do
+    defexception message: "Stream integrity failed to check"
+
+    @moduledoc """
+    Error when checking integrity of AES encrypted stream
+    """
+  end
+
   @key_byte_size 32
+  @hmac_type :sha256
 
   @typedoc "A key is a 256 bit length bitstring."
   @type key :: <<_::256>>
@@ -143,6 +152,98 @@ defmodule Kryptonite.AES do
   end
 
   @doc """
+  Encrypts a stream using AES in CTR mode.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> 'This is a secret'
+      ...>     |> stream_encrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> is_list()
+      true
+  """
+  @spec stream_encrypt(Enumerable.t(), key, iv) :: Enumerable.t()
+  def stream_encrypt(stream, key, iv) do
+    acc0 = :crypto.stream_init(:aes_ctr, key, iv)
+
+    reduce = fn elem, acc ->
+      {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
+      {[cypher], acc}
+    end
+
+    Stream.transform(stream, acc0, reduce)
+  end
+
+  @doc """ 
+  Encrypts + HMAC a stream into a Collectable
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> File.write!("/tmp/plain.txt", "This is a secret")
+      iex> {:ok, tag} =
+      ...>   "/tmp/plain.txt"
+      ...>   |> File.stream!()
+      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
+      iex> {File.rm!("/tmp/plain.txt"), File.rm!("/tmp/secret.aes")}
+      iex> is_binary(tag)
+      true
+  """
+  @spec stream_encrypt(Enumerable.t, Collectable.t, key, iv, binary) :: {:ok, tag}
+  def stream_encrypt(in_stream, out_stream, key, iv, ad) do
+    acc =
+      :aes_ctr
+      |> :crypto.stream_init(key, iv)
+
+    enc_stream =
+      in_stream
+      |> Stream.transform(acc, &do_stream_encrypt/2)
+      |> Stream.into(out_stream)
+
+    tag =
+      [iv]
+      |> Stream.concat(enc_stream)
+      |> stream_tag(ad)
+
+    {:ok, tag}
+  end
+
+  @doc """
+  Check integrity then decrypts a stream encrypted with `stream_encrypt/5`
+
+  Raise `Kryptonite.AES.StreamIntegrityError` in case of integrity checking error.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> File.write!("/tmp/plain.txt", "This is a secret")
+      iex> {:ok, tag} =
+      ...>   "/tmp/plain.txt"
+      ...>   |> File.stream!()
+      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
+      iex> File.stream!("/tmp/secret.aes")
+      ...>   |> stream_decrypt!(key, iv, "Auth...", tag)
+      ...>   |> Enum.to_list()
+      ...>   |> IO.iodata_to_binary()
+      "This is a secret"
+  """
+  @spec stream_decrypt!(Enumerable.t, key, binary, iv, tag) :: Enumerable.t
+  def stream_decrypt!(in_stream, key, iv, ad, tag) do
+    [iv]
+    |> Stream.concat(in_stream)
+    |> stream_tag(ad)
+    |> case do
+      ^tag ->
+        in_stream
+        |> stream_decrypt(key, iv)
+        
+      _ ->
+        raise StreamIntegrityError
+    end
+  end
+
+  @doc """
   Decrypts a `cypher` using AES in CBC mode.
 
   This function must be provided with the same initialization vector `iv` that
@@ -184,6 +285,48 @@ defmodule Kryptonite.AES do
     end
   end
 
+  @doc """
+  Decrypts a stream using AES in CTR mode.
+
+  ## Examples
+
+      iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
+      iex> msg = "This is a secret..."
+      iex> msg == msg
+      ...>     |> String.to_charlist()
+      ...>     |> stream_encrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> stream_decrypt(key, iv)
+      ...>     |> Enum.to_list()
+      ...>     |> :erlang.iolist_to_binary
+      true
+  """
+  @spec stream_decrypt(Enumerable.t(), key, iv) :: Enumerable.t()
+  def stream_decrypt(stream, key, iv) do
+    acc0 =
+      :aes_ctr
+      |> :crypto.stream_init(key, iv)
+
+    reduce = fn elem, acc ->
+      {acc, cypher} = :crypto.stream_decrypt(acc, elem)
+      {[cypher], acc}
+    end
+
+    Stream.transform(stream, acc0, reduce)
+  end
+
+  @doc """
+  Returns computed AES + HMAC encoded stream tag
+  """
+  @spec stream_tag(Enumerable.t, binary) :: tag
+  def stream_tag(stream, key) do
+    stream
+    |> Enum.reduce(:crypto.hmac_init(@hmac_type, key), fn data, acc ->
+      :crypto.hmac_update(acc, data)
+    end)
+    |> :crypto.hmac_final()
+  end
+
   # Private stuff.
 
   @spec pad(binary) :: padded
@@ -203,4 +346,9 @@ defmodule Kryptonite.AES do
 
   @spec cut_key(binary) :: binary
   defp cut_key(<<key::binary-size(@key_byte_size), _::binary>>), do: key
+
+  defp do_stream_encrypt(elem, acc) do
+    {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
+    {[cypher], acc}
+  end
 end
