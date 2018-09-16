@@ -128,10 +128,10 @@ defmodule Kryptonite.AES do
   end
 
   @doc """
-  Encrypt a `msg` with AES in CBC mode.
+  Encrypt a `msg` with AES in GCM mode.
 
   Returns a tuple containing the `initialization_vector`, and `cypher`.
-  At a high level encryption using AES in CBC mode looks like this:
+  At a high level encryption using AES in GCM mode looks like this:
 
       key + iv + ad + msg -> cypher + tag
 
