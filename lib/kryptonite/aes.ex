@@ -181,12 +181,13 @@ defmodule Kryptonite.AES do
   ## Examples
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
-      iex> File.write!("/tmp/plain.txt", "This is a secret")
-      iex> {:ok, tag} =
-      ...>   "/tmp/plain.txt"
+      iex> fid = 1000000 |> :rand.uniform() |> to_string
+      iex> {plain, enc} = {"/tmp/\#{fid}.txt", "/tmp/\#{fid}.aes"}
+      iex> File.write!(plain, "This is a secret")
+      iex> {:ok, tag} = plain
       ...>   |> File.stream!()
-      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
-      iex> {File.rm!("/tmp/plain.txt"), File.rm!("/tmp/secret.aes")}
+      ...>   |> stream_encrypt(File.stream!(enc), key, iv, "Auth...")
+      iex> {File.rm!(plain), File.rm!(enc)}
       iex> is_binary(tag)
       true
   """
@@ -217,12 +218,14 @@ defmodule Kryptonite.AES do
   ## Examples
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
-      iex> File.write!("/tmp/plain.txt", "This is a secret")
-      iex> {:ok, tag} =
-      ...>   "/tmp/plain.txt"
+      iex> fid = 1000000 |> :rand.uniform() |> to_string
+      iex> {plain, enc} = {"/tmp/\#{fid}.txt", "/tmp/\#{fid}.aes"}
+      iex> File.write!(plain, "This is a secret")
+      iex> {:ok, tag} = plain
       ...>   |> File.stream!()
-      ...>   |> stream_encrypt(File.stream!("/tmp/secret.aes"), key, iv, "Auth...")
-      iex> File.stream!("/tmp/secret.aes")
+      ...>   |> stream_encrypt(File.stream!(enc), key, iv, "Auth...")
+      iex> enc
+      ...>   |> File.stream!()
       ...>   |> stream_decrypt!(key, iv, "Auth...", tag)
       ...>   |> Enum.to_list()
       ...>   |> IO.iodata_to_binary()
