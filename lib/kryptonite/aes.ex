@@ -158,9 +158,9 @@ defmodule Kryptonite.AES do
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
       iex> 'This is a secret'
-      ...>     |> stream_encrypt(key, iv)
-      ...>     |> Enum.to_list()
-      ...>     |> is_list()
+      ...>   |> stream_encrypt(key, iv)
+      ...>   |> Enum.to_list()
+      ...>   |> is_list()
       true
   """
   @spec stream_encrypt(Enumerable.t(), key, iv) :: Enumerable.t()
@@ -294,15 +294,14 @@ defmodule Kryptonite.AES do
   ## Examples
 
       iex> {key, iv} = {generate_key!(), Random.bytes!(16)}
-      iex> msg = "This is a secret..."
-      iex> msg == msg
-      ...>     |> String.to_charlist()
-      ...>     |> stream_encrypt(key, iv)
-      ...>     |> Enum.to_list()
-      ...>     |> stream_decrypt(key, iv)
-      ...>     |> Enum.to_list()
-      ...>     |> :erlang.iolist_to_binary
-      true
+      iex> "This is a secret..."
+      ...>   |> String.to_charlist()
+      ...>   |> stream_encrypt(key, iv)
+      ...>   |> Enum.to_list()
+      ...>   |> stream_decrypt(key, iv)
+      ...>   |> Enum.to_list()
+      ...>   |> :erlang.iolist_to_binary
+      "This is a secret..."
   """
   @spec stream_decrypt(Enumerable.t(), key, iv) :: Enumerable.t()
   def stream_decrypt(stream, key, iv) do
