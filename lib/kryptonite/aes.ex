@@ -175,7 +175,7 @@ defmodule Kryptonite.AES do
     Stream.transform(stream, acc0, reduce)
   end
 
-  @doc """ 
+  @doc """
   Encrypts + HMAC a stream into a Collectable
 
   ## Examples
@@ -190,7 +190,7 @@ defmodule Kryptonite.AES do
       iex> is_binary(tag)
       true
   """
-  @spec stream_encrypt(Enumerable.t, Collectable.t, key, iv, binary) :: {:ok, tag}
+  @spec stream_encrypt(Enumerable.t(), Collectable.t(), key, iv, binary) :: {:ok, tag}
   def stream_encrypt(in_stream, out_stream, key, iv, ad) do
     acc =
       :aes_ctr
@@ -228,7 +228,7 @@ defmodule Kryptonite.AES do
       ...>   |> IO.iodata_to_binary()
       "This is a secret"
   """
-  @spec stream_decrypt!(Enumerable.t, key, binary, iv, tag) :: Enumerable.t
+  @spec stream_decrypt!(Enumerable.t(), key, binary, iv, tag) :: Enumerable.t()
   def stream_decrypt!(in_stream, key, iv, ad, tag) do
     [iv]
     |> Stream.concat(in_stream)
@@ -237,7 +237,7 @@ defmodule Kryptonite.AES do
       ^tag ->
         in_stream
         |> stream_decrypt(key, iv)
-        
+
       _ ->
         raise StreamIntegrityError
     end
@@ -318,7 +318,7 @@ defmodule Kryptonite.AES do
   @doc """
   Returns computed AES + HMAC encoded stream tag
   """
-  @spec stream_tag(Enumerable.t, binary) :: tag
+  @spec stream_tag(Enumerable.t(), binary) :: tag
   def stream_tag(stream, key) do
     stream
     |> Enum.reduce(:crypto.hmac_init(@hmac_type, key), fn data, acc ->
