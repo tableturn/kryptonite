@@ -114,7 +114,7 @@ defmodule Kryptonite.AESTest do
       fid = :rand.uniform(1_000_000)
       enc = "/tmp/#{fid}.aes"
       File.write!(enc, "incorrect data")
-      tag = << 0 :: size(128) >>
+      tag = <<0::size(128)>>
 
       assert_raise StreamIntegrityError, fn ->
         enc
@@ -143,8 +143,9 @@ defmodule Kryptonite.AESTest do
 
     test "returns an error tuple upon failure", %{key: key, iv: iv} do
       assert match?(
-        {:error, :decryption_error},
-        AES.decrypt_gcm(key, iv, @auth_data, "bad cypher", "bad tag"))
+               {:error, :decryption_error},
+               AES.decrypt_gcm(key, iv, @auth_data, "bad cypher", "bad tag")
+             )
     end
   end
 
