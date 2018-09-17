@@ -1,6 +1,6 @@
 defmodule Kryptonite.AESTest do
   use ExUnit.Case, async: true
-  alias Kryptonite.{AES, Random}
+  alias Kryptonite.{AES, AES.StreamIntegrityError, Random}
   doctest AES, import: true
 
   @password "Some re4lly secUre stuff!"
@@ -110,7 +110,18 @@ defmodule Kryptonite.AESTest do
                |> IO.iodata_to_binary()
     end
 
-    test "raises when the stream is corrupted"
+    test "raises when the stream is corrupted", %{key: key, iv: iv} do
+      fid = :rand.uniform(1_000_000)
+      enc = "/tmp/#{fid}.aes"
+      File.write!(enc, "incorrect data")
+      tag = << 0 :: size(128) >>
+
+      assert_raise StreamIntegrityError, fn ->
+        enc
+        |> File.stream!()
+        |> AES.stream_decrypt!(key, iv, @auth_data, tag)
+      end
+    end
   end
 
   describe ".decrypt_cbc/3" do
@@ -130,7 +141,11 @@ defmodule Kryptonite.AESTest do
       assert {:ok, @message} == AES.decrypt_gcm(key, iv, @auth_data, cypher, tag)
     end
 
-    test "returns an error tupple upon failure"
+    test "returns an error tuple upon failure", %{key: key, iv: iv} do
+      assert match?(
+        {:error, :decryption_error},
+        AES.decrypt_gcm(key, iv, @auth_data, "bad cypher", "bad tag"))
+    end
   end
 
   describe "stream_decrypt!/3" do
