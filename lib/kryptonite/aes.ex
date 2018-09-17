@@ -60,43 +60,18 @@ defmodule Kryptonite.AES do
 
   @doc """
   Generates an AES key.
-
-  ## Examples
-
-      iex> key = generate_key!()
-      iex> bit_size(key)
-      256
-      iex> generate_key!() == generate_key!()
-      false
   """
   @spec generate_key!() :: key | {:error, any}
   def generate_key!, do: Random.bytes!(@key_byte_size)
 
   @doc """
   Generates an AES key.
-
-  ## Examples
-
-      iex> {:ok, key} = generate_key()
-      iex> bit_size(key)
-      256
-      iex> generate_key() == generate_key()
-      false
   """
   @spec generate_key() :: {:ok, key} | {:error, any}
   def generate_key, do: Random.bytes(@key_byte_size)
 
   @doc """
   Derives an AES key deterministically based on a password.
-
-  ## Examples
-
-      iex> password = "Awesome Passw0rd!"
-      iex> opts = [salt: "S", rounds: 2]
-      iex> bit_size(derive_key(password, opts))
-      256
-      iex> derive_key(password, opts) == derive_key(password, opts)
-      true
   """
   @spec derive_key(String.t(), keyword) :: key
   def derive_key(password, opts),
@@ -187,15 +162,13 @@ defmodule Kryptonite.AES do
       iex> {:ok, tag} = plain
       ...>   |> File.stream!()
       ...>   |> stream_encrypt(File.stream!(enc), key, iv, "Auth...")
-      iex> {File.rm!(plain), File.rm!(enc)}
+      iex> Enum.each([plain, enc], &File.rm!/1)
       iex> is_binary(tag)
       true
   """
   @spec stream_encrypt(Enumerable.t(), Collectable.t(), key, iv, binary) :: {:ok, tag}
   def stream_encrypt(in_stream, out_stream, key, iv, ad) do
-    acc =
-      :aes_ctr
-      |> :crypto.stream_init(key, iv)
+    acc = :crypto.stream_init(:aes_ctr, key, iv)
 
     enc_stream =
       in_stream
@@ -237,12 +210,8 @@ defmodule Kryptonite.AES do
     |> Stream.concat(in_stream)
     |> stream_tag(ad)
     |> case do
-      ^tag ->
-        in_stream
-        |> stream_decrypt(key, iv)
-
-      _ ->
-        raise StreamIntegrityError
+      ^tag -> stream_decrypt(in_stream, key, iv)
+      _ -> raise StreamIntegrityError
     end
   end
 
@@ -350,7 +319,7 @@ defmodule Kryptonite.AES do
   defp cut_key(<<key::binary-size(@key_byte_size), _::binary>>), do: key
 
   defp do_stream_encrypt(elem, acc) do
-    {acc, cypher} = :crypto.stream_encrypt(acc, elem |> List.wrap())
+    {acc, cypher} = :crypto.stream_encrypt(acc, List.wrap(elem))
     {[cypher], acc}
   end
 end
