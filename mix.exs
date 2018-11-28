@@ -10,8 +10,8 @@ defmodule Kryptonite.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Kryptonite",
-      source_url: "https://github.com/the-missing-link/kryptonite",
-      homepage_url: "https://github.com/the-missing-link/kryptonite",
+      source_url: "https://github.com/tableturn/kryptonite",
+      homepage_url: "https://github.com/tableturn/kryptonite",
       dialyzer: [plt_add_deps: :project, plt_add_apps: [:public_key]],
       docs: [extras: ~w(README.md)],
       test_coverage: [tool: ExCoveralls],
@@ -53,7 +53,7 @@ defmodule Kryptonite.MixProject do
       files: ["lib", "mix.exs", "README*"],
       maintainers: ["Pierre Martin"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/the-missing-link/kryptonite"}
+      links: %{"GitHub" => "https://github.com/tableturn/kryptonite"}
     ]
   end
 end

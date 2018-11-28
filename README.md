@@ -1,7 +1,7 @@
 # Kryptonite
 
-[![Build Status](https://ci.emage.run/api/badges/the-missing-link/kryptonite/status.svg)](https://ci.emage.run/the-missing-link/kryptonite)
-[![Coverage Report](https://codecov.io/gh/the-missing-link/kryptonite/branch/master/graph/badge.svg?token=xsuechvNxp)](https://codecov.io/gh/the-missing-link/kryptonite)
+[![Build Status](https://ci.linky.one/api/badges/tableturn/kryptonite/status.svg)](https://ci.emage.run/tableturn/kryptonite)
+[![Coverage Report](https://codecov.io/gh/tableturn/kryptonite/branch/master/graph/badge.svg)](https://codecov.io/gh/tableturn/kryptonite)
 [![Hex.pm](https://img.shields.io/hexpm/dt/kryptonite.svg)](https://hex.pm/packages/kryptonite)
 
 A collection of modules that are very close to cryptography but aren't - hence the typo.
