@@ -32,6 +32,18 @@ pipeline:
       - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
       - MIX_ENV=test mix do deps.get, coveralls.json
 
+  slack-notify:
+    when:
+      status: [success, failure]
+    image: plugins/slack
+    secrets: [slack_webhook]
+    channel: ci
+    username: Drone
+    template: >
+      [{{repo.name}}:{{build.branch}}]
+      <{{build.link}}|Build {{truncate build.commit 8}}> by {{build.author}}
+      was a {{build.status}}.
+
   # Upload coverage reports, only for the latest elixir.
   codecov:
     when:
@@ -43,8 +55,9 @@ pipeline:
     files:
       - cover/excoveralls.json
 
-  # Store cache every time a build succeeds.
   rebuild-cache:
+    when:
+      status: [success, failure]
     image: drillster/drone-volume-cache
     rebuild: true
     cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
