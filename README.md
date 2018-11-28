@@ -1,6 +1,6 @@
 # Kryptonite
 
-[![Build Status](https://ci.linky.one/api/badges/tableturn/kryptonite/status.svg)](https://ci.emage.run/tableturn/kryptonite)
+[![Build Status](https://ci.linky.one/api/badges/tableturn/kryptonite/status.svg)](https://ci.linky.one/tableturn/kryptonite)
 [![Coverage Report](https://codecov.io/gh/tableturn/kryptonite/branch/master/graph/badge.svg)](https://codecov.io/gh/tableturn/kryptonite)
 [![Hex.pm](https://img.shields.io/hexpm/dt/kryptonite.svg)](https://hex.pm/packages/kryptonite)
 
