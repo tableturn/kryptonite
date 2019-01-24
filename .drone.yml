@@ -56,8 +56,6 @@ pipeline:
       - cover/excoveralls.json
 
   rebuild-cache:
-    when:
-      status: [success, failure]
     image: drillster/drone-volume-cache
     rebuild: true
     cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
