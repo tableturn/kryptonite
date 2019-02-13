@@ -1,10 +1,13 @@
+kind: pipeline
+name: kryptonite
+
 matrix:
   ELIXIR_TAG:
     - 1.5
     - 1.6
     - 1.7
 
-pipeline:
+steps:
   # Get cached stuff from last run.
   restore-cache:
     image: drillster/drone-volume-cache
