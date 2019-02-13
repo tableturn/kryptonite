@@ -1,4 +1,3 @@
-# Dummy 1
 kind: pipeline
 name: kryptonite
 
@@ -7,35 +6,34 @@ matrix:
     - 1.5
     - 1.6
     - 1.7
+    - 1.8
 
 steps:
-  # Get cached stuff from last run.
-  restore-cache:
-    image: drillster/drone-volume-cache
-    restore: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
-    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
-    volumes:
-      - /tmp/cache:/cache
-
   # Run tests for each matrix elixir version.
   build:
     image: elixir:${ELIXIR_TAG}
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=test mix do deps.get, test
+    volumes:
+      - name: kryptonite_plt_cache
+        path: /plts
 
   # Check code formatting, linting and dialyze it using latest elixir.
   checks:
     when:
       matrix:
-        ELIXIR_TAG: 1.7
+        ELIXIR_TAG: 1.8
     image: elixir:${ELIXIR_TAG}
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
       - MIX_ENV=test mix do deps.get, coveralls.json
+    volumes:
+      - name: kryptonite_plt_cache
+        path: /plts
 
+  # Notify slack of our build status.
   slack-notify:
     when:
       status: [success, failure]
@@ -53,16 +51,13 @@ steps:
     when:
       status: [success]
       matrix:
-        ELIXIR_TAG: 1.7
+        ELIXIR_TAG: 1.8
     image: robertstettner/drone-codecov
     secrets: [codecov_token]
     files:
       - cover/excoveralls.json
 
-  rebuild-cache:
-    image: drillster/drone-volume-cache
-    rebuild: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
-    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
-    volumes:
-      - /tmp/cache:/cache
+volumes:
+  - name: kryptonite_plt_cache
+    host:
+      path: /volumes/kryptonite_plt_cache
