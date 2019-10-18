@@ -32,17 +32,20 @@ steps:
       - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
       - MIX_ENV=test mix do deps.get, coveralls.json
 
+  # Webhook our slack channel.
   - name: slack-notify
+    image: plugins/slack
+    settings:
+      webhook:
+        from_secret: slack_webhook
+      channel: ci
+      username: Drone
+      template: >
+        [{{repo.name}}:{{build.branch}}]
+        <{{build.link}}|Build {{truncate build.commit 8}}> by {{build.author}}
+        was a {{build.status}}.
     when:
       status: [success, failure]
-    image: plugins/slack
-    secrets: [slack_webhook]
-    channel: ci
-    username: Drone
-    template: >
-      [{{repo.name}}:{{build.branch}}]
-      <{{build.link}}|Build {{truncate build.commit 8}}> by {{build.author}}
-      was a {{build.status}}.
 
   # Upload coverage reports, only for the latest elixir.
   - name: codecov
