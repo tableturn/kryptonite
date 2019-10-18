@@ -6,7 +6,6 @@ steps:
   restore-cache:
     image: drillster/drone-volume-cache
     restore: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, 1.7]
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
       - /tmp/cache:/cache
@@ -49,7 +48,6 @@ steps:
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, 1.7]
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
       - /tmp/cache:/cache
