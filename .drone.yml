@@ -1,38 +1,38 @@
-matrix:
-  ELIXIR_TAG:
-    - 1.5
-    - 1.6
-    - 1.7
+kind: pipeline
+name: kryptonite
 
-pipeline:
+volumes:
+  - name: cache
+    host:
+      path: /tmp/drone/cache
+
+steps:
   # Get cached stuff from last run.
-  restore-cache:
+  - name: restore-cache
     image: drillster/drone-volume-cache
-    restore: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
-    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
-      - /tmp/cache:/cache
+      - name: cache
+        path: /cache
+    settings:
+      restore: true
+      mount: [/root/.mix, /root/.hex, ./deps, ./_build]
 
-  # Run tests for each matrix elixir version.
-  build:
-    image: elixir:${ELIXIR_TAG}
+  # Runs all tests.
+  - name: build
+    image: elixir:1.7
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=test mix do deps.get, test
 
   # Check code formatting, linting and dialyze it using latest elixir.
-  checks:
-    when:
-      matrix:
-        ELIXIR_TAG: 1.7
-    image: elixir:${ELIXIR_TAG}
+  - name: checks
+    image: elixir:1.7
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
       - MIX_ENV=test mix do deps.get, coveralls.json
 
-  slack-notify:
+  - name: slack-notify
     when:
       status: [success, failure]
     image: plugins/slack
@@ -45,20 +45,22 @@ pipeline:
       was a {{build.status}}.
 
   # Upload coverage reports, only for the latest elixir.
-  codecov:
+  - name: codecov
     when:
       status: [success]
-      matrix:
-        ELIXIR_TAG: 1.7
-    image: robertstettner/drone-codecov
-    secrets: [codecov_token]
+    image: plugins/codecov
+    settings:
+      token:
+        from_secret: codecov_token
     files:
       - cover/excoveralls.json
 
-  rebuild-cache:
+  # Save cache.
+  - name: rebuild-cache
     image: drillster/drone-volume-cache
-    rebuild: true
-    cache_key: [DRONE_REPO_OWNER, DRONE_REPO_NAME, ELIXIR_TAG]
-    mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
-      - /tmp/cache:/cache
+      - name: cache
+        path: /cache
+    settings:
+      rebuild: true
+      mount: [/root/.mix, /root/.hex, ./deps, ./_build]
