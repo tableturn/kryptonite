@@ -2,7 +2,6 @@ kind: pipeline
 name: tt-api
 
 steps:
-  # Get cached stuff from last run.
   restore-cache:
     image: drillster/drone-volume-cache
     restore: true
@@ -16,7 +15,6 @@ steps:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=test mix do deps.get, test
 
-  # Check code formatting, linting and dialyze it using latest elixir.
   checks:
     image: elixir:1.7
     commands:
@@ -36,7 +34,6 @@ steps:
       <{{build.link}}|Build {{truncate build.commit 8}}> by {{build.author}}
       was a {{build.status}}.
 
-  # Upload coverage reports, only for the latest elixir.
   codecov:
     when:
       status: [success]
