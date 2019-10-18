@@ -8,7 +8,8 @@ steps:
     restore: true
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
-      - /tmp/cache:/cache
+      - name: kryptonite_ci_cache
+        path: /cache
 
   # Runs all tests.
   - build:
@@ -51,4 +52,5 @@ steps:
     rebuild: true
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
     volumes:
-      - /tmp/cache:/cache
+      - name: kryptonite_ci_cache
+        path: /cache
