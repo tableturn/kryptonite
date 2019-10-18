@@ -3,7 +3,7 @@ name: tt-api
 
 steps:
   # Get cached stuff from last run.
-  - restore-cache:
+  - name: restore-cache
     image: drillster/drone-volume-cache
     restore: true
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
@@ -12,21 +12,21 @@ steps:
         path: /cache
 
   # Runs all tests.
-  - build:
+  - name: build
     image: elixir:1.7
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=test mix do deps.get, test
 
   # Check code formatting, linting and dialyze it using latest elixir.
-  - checks:
+  - name: checks
     image: elixir:1.7
     commands:
       - mix do local.rebar --force, local.hex --force
       - MIX_ENV=dev mix do deps.get, format --check-formatted, credo --all, dialyzer
       - MIX_ENV=test mix do deps.get, coveralls.json
 
-  - slack-notify:
+  - name: slack-notify
     when:
       status: [success, failure]
     image: plugins/slack
@@ -39,7 +39,7 @@ steps:
       was a {{build.status}}.
 
   # Upload coverage reports, only for the latest elixir.
-  - codecov:
+  - name: codecov
     when:
       status: [success]
     image: robertstettner/drone-codecov
@@ -47,7 +47,7 @@ steps:
     files:
       - cover/excoveralls.json
 
-  - rebuild-cache:
+  - name: rebuild-cache
     image: drillster/drone-volume-cache
     rebuild: true
     mount: [/root/.mix, /root/.hex, ./deps, ./_build, ./.git]
