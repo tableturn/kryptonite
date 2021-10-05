@@ -66,7 +66,7 @@ defmodule Kryptonite.RSA.PrivateKeyTest do
                PrivateKey.to_native(key)
     end
 
-    test "only hanndles known versions" do
+    test "only handles known versions" do
       key = %PrivateKey{version: :bad}
       assert {:error, :invalid_native_version} == PrivateKey.to_native(key)
     end
