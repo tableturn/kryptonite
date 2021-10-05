@@ -4,7 +4,7 @@ defmodule Kryptonite.MixProject do
   def project do
     [
       app: :kryptonite,
-      version: "0.1.12",
+      version: "1.0.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -25,7 +25,7 @@ defmodule Kryptonite.MixProject do
   end
 
   def application do
-    [extra_applications: [:logger]]
+    [extra_applications: [:logger, :crypto, :public_key]]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -34,12 +34,11 @@ defmodule Kryptonite.MixProject do
   defp deps do
     [
       # Dev and Test only.
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       # Dev only.
-      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.8", only: :test, runtime: false}
+      {:ex_doc, "~> 0.25", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.14", only: :test, runtime: false}
     ]
   end
 
