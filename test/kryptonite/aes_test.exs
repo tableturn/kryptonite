@@ -1,7 +1,7 @@
 defmodule Kryptonite.AESTest do
   use ExUnit.Case, async: true
   alias Kryptonite.{AES, Random}
-  # doctest AES, import: true
+  doctest AES, import: true
 
   @password "Some re4lly secUre stuff!"
   @message "Some simple\ntext message."
