@@ -4,8 +4,8 @@ defmodule Kryptonite.MixProject do
   def project do
     [
       app: :kryptonite,
-      version: "0.1.12",
-      elixir: "~> 1.5",
+      version: "1.0.0",
+      elixir: "~> 1.14.1",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -20,12 +20,14 @@ defmodule Kryptonite.MixProject do
       )),
       package: package(),
       description:
-        "A collection of modules that are very close to cryptography but aren't - hence the typo."
+        "A collection of modules that are very close to cryptography but aren't - hence the typo.",
+      aliases: aliases(),
+
     ]
   end
 
   def application do
-    [extra_applications: [:logger]]
+    [extra_applications: [:logger, :crypto, :public_key]]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -34,12 +36,11 @@ defmodule Kryptonite.MixProject do
   defp deps do
     [
       # Dev and Test only.
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.3.0", only: [:dev, :test], runtime: false},
       # Dev only.
-      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.8", only: :test, runtime: false}
+      {:ex_doc, "~> 0.29.4", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.16.1", only: :test, runtime: false}
     ]
   end
 
@@ -56,4 +57,17 @@ defmodule Kryptonite.MixProject do
       links: %{"GitHub" => "https://github.com/tableturn/kryptonite"}
     ]
   end
+
+  def aliases() do
+    [
+     "dev.update_deps": [
+       "hex.outdated --within-requirements",
+       "deps.update --all --only",
+       "deps.clean --all --only",
+       "deps.get",
+       "deps.compile",
+       "hex.outdated --within-requirements"
+     ]
+   ]
+ end
 end

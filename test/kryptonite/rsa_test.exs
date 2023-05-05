@@ -57,7 +57,7 @@ defmodule Kryptonite.RSATest do
     end
 
     test "errors when encryption cannot be performed", %{priv1: priv1, pub1: pub1, cypher: cypher} do
-      assert {:error, {:decryption_failure, :decrypt_failed}} ==
+      assert {:error, {:decryption_failure, {:error, {'pkey.c', 1184}, 'Couldn\'t get the result'}}} ==
                RSA.authenticated_decrypt(priv1, pub1, cypher)
     end
   end
