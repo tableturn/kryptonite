@@ -65,7 +65,7 @@ defmodule Kryptonite.RSA.PublicKeyTest do
 
     test "errors when the key doesn't match", %{cypher: cypher} do
       pub = %PublicKey{public_modulus: 3, public_exponent: 5}
-      assert {:error, {:decryption_failure, :decrypt_failed}} == PublicKey.decrypt(pub, cypher)
+      assert {:error, {:decryption_failure, {:error, {'pkey.c', 1184}, 'Couldn\'t get the result'}}}== PublicKey.decrypt(pub, cypher)
     end
   end
 
